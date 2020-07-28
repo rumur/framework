@@ -104,6 +104,7 @@ class Form extends HtmlBuilder implements FormInterface, FieldTypeInterface
      */
     protected $allowedOptions = [
         'attributes',
+        'container_attr',
         'csrf',
         'errors',
         'flush',
@@ -121,6 +122,7 @@ class Form extends HtmlBuilder implements FormInterface, FieldTypeInterface
      */
     protected $defaultOptions = [
         'attributes' => [],
+        'container_attr' => [],
         'csrf' => true,
         'flush' => true,
         'tags' => true,
@@ -174,6 +176,13 @@ class Form extends HtmlBuilder implements FormInterface, FieldTypeInterface
      * @var string
      */
     protected $component;
+
+    /**
+     * Form view data.
+     *
+     * @var array
+     */
+    private $data = [];
 
     public function __construct(
         $dataClass,
@@ -487,9 +496,28 @@ class Form extends HtmlBuilder implements FormInterface, FieldTypeInterface
         // Only provide the form instance
         // to its view under the private
         // variable "$__form".
-        return [
+        return array_merge($this->data, [
             '__form' => $this
-        ];
+        ]);
+    }
+
+    /**
+     * Pass custom data to the form view.
+     *
+     * @param array|string $key
+     * @param null         $value
+     *
+     * @return FieldTypeInterface
+     */
+    public function with($key, $value = null): FieldTypeInterface
+    {
+        if (is_array($key)) {
+            $this->data = array_merge($this->data, $key);
+        } else {
+            $this->data[$key] = $value;
+        }
+
+        return $this;
     }
 
     /**
@@ -963,5 +991,30 @@ class Form extends HtmlBuilder implements FormInterface, FieldTypeInterface
     public function getComponent(): string
     {
         return $this->component;
+    }
+
+    /**
+     * Return form HTML element open tag.
+     *
+     * @return string
+     */
+    public function open(): string
+    {
+        return $this->getOption('tags')
+            ? sprintf(
+                '<form %s>',
+                $this->attributes($this->getAttributes())
+            )
+            : '';
+    }
+
+    /**
+     * Return form HTML element close tag.
+     *
+     * @return string
+     */
+    public function close(): string
+    {
+        return $this->getOption('tags') ? '</form>' : '';
     }
 }

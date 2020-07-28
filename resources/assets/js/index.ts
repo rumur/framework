@@ -1,4 +1,5 @@
 import "@babel/polyfill/noConflict";
+import axios from "axios";
 import Manager from "./src/components/Manager";
 import MetaboxFactory from "./src/components/MetaboxFactory";
 import TextField from "./src/components/fields/TextField";
@@ -15,6 +16,12 @@ import MediaField from "./src/components/fields/MediaField";
 import CollectionField from "./src/components/fields/CollectionField";
 import EditorField from "./src/components/fields/EditorField";
 import '../sass/index.scss';
+
+/**
+ * Axios common settings
+ * Identify API requests performed by the framework.
+ */
+axios.defaults.headers.common['Themosis-Api-Request'] = 1;
 
 /*
  * Initialize the components Manager.
@@ -43,8 +50,10 @@ export { manager as Manager };
 /**
  * Initialize the Metabox Factory.
  */
-const factory = new MetaboxFactory();
-factory.make(themosisGlobal.metabox);
+if ('undefined' !== typeof themosisGlobal) {
+    const factory = new MetaboxFactory();
+    factory.make(themosisGlobal.metabox);
+}
 
 /**
  * Themosis Library Public API.

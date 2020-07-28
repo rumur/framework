@@ -1,7 +1,7 @@
 import * as React from "react";
 import {Description, Field} from "./common";
 import Label from "../labels/Label";
-import {getErrorsMessages, hasErrors, isRequired, isUndefined} from "../../helpers";
+import {attributes, getErrorsMessages, hasErrors, isRequired, isUndefined} from "../../helpers";
 import Error from "../errors/Error";
 import Checkbox from "../inputs/Checkbox";
 
@@ -26,8 +26,8 @@ class CheckboxField extends React.Component <FieldProps> {
     /**
      * Check if field has a checked attribute.
      */
-    isChecked():boolean {
-        return 'checked' === this.props.field.attributes.checked;
+    isChecked(): boolean {
+        return 'on' === this.props.field.value;
     }
 
     /*
@@ -61,7 +61,9 @@ class CheckboxField extends React.Component <FieldProps> {
                     <Checkbox changeHandler={this.onChange}
                               id={this.props.field.attributes.id}
                               value={this.getValue()}
-                              checked={this.isChecked()}/>
+                              checked={this.isChecked()}
+                              attributes={attributes(this.props.field)}
+                              className={this.props.field.attributes.class}/>
                     { hasErrors(this.props.field) && <Error messages={getErrorsMessages(this.props.field)}/> }
                     { this.props.field.options.info && <Description content={this.props.field.options.info}/> }
                 </div>

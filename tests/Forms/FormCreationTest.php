@@ -20,6 +20,7 @@ use Themosis\Core\Application;
 use Themosis\Forms\Contracts\FieldTypeInterface;
 use Themosis\Forms\Contracts\FormInterface;
 use Themosis\Forms\Fields\Types\TextType;
+use Themosis\Forms\Form;
 use Themosis\Forms\FormFactory;
 use Themosis\Support\Contracts\SectionInterface;
 use Themosis\Tests\Forms\Entities\ContactEntity;
@@ -1141,6 +1142,10 @@ class FormCreationTest extends TestCase
         $this->assertEquals('Marco Polo', $resource['fields']['data'][2]['value']);
         $this->assertEquals('green', $resource['fields']['data'][3]['value']);
         $this->assertEquals([20, 30], $resource['fields']['data'][4]['value']);
+        $this->assertEquals(
+            ['key' => 'Small', 'value' => 10, 'type' => 'option'],
+            $resource['fields']['data'][4]['options']['choices'][0]
+        );
     }
 
     public function testFormGetDataObjectDefaultValues()
@@ -1263,4 +1268,42 @@ class FormCreationTest extends TestCase
         $this->assertEquals($request->get($content->getName()), $dto->content);
         $this->assertEmpty($dto->getAuthor());
     }
+
+    public function test_form_open_close_tag()
+    {
+        $factory = $this->getFormFactory();
+        $fields = $this->getFieldsFactory();
+
+        /** @var Form $form */
+        $form = $factory->make(null, ['tags' => false])
+            ->add($fields->text('test'))
+            ->get();
+
+        $this->assertEmpty($form->open());
+        $this->assertEmpty($form->close());
+    }
+
+    public function test_checkbox_field_type_with_default_value_can_be_overriden()
+    {
+        $factory = $this->getFormFactory();
+        $fields = $this->getFieldsFactory();
+
+        $form = $factory->make(new CheckboxDto())
+            ->add($fields->checkbox('subscribe'))
+            ->get();
+
+        $form->handleRequest(Request::create('/', 'POST', ['th_subscribe' => false]));
+
+        $attributes = $form->repository()->getFieldByName('subscribe')->getAttributes();
+
+        // The default value is "true", so the field should be checked.
+        // But the request sent a "false" value, so we need to make sure the
+        // checked attribute is no longer set.
+        $this->assertFalse(isset($attributes['checked']));
+    }
+}
+
+class CheckboxDto
+{
+    public $subscribe = 'on';
 }

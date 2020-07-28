@@ -6,6 +6,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\Validation\Factory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Validator;
 use Themosis\Forms\Contracts\FieldTypeInterface;
 use Themosis\Hook\IHook;
@@ -382,9 +383,27 @@ class Page implements PageInterface
         if (false !== $pos = strpos($this->getParent(), 'post_type=')) {
             // Parent hook is equivalent to the post type slug value.
             return substr($this->getParent(), $pos + 10);
-        } elseif ('edit.php' === trim($this->getParent(), '\/?&')) {
-            // Parent is the default post post type.
-            return 'posts';
+        } else {
+            switch (trim($this->getParent(), '\/?&')) {
+                case 'index.php':
+                    return 'dashboard';
+                case 'edit.php':
+                    return 'posts';
+                case 'upload.php':
+                    return 'media';
+                case 'edit-comments.php':
+                    return 'comments';
+                case 'themes.php':
+                    return 'appearance';
+                case 'plugins.php':
+                    return 'plugins';
+                case 'users.php':
+                    return 'users';
+                case 'tools.php':
+                    return 'tools';
+                case 'options-general.php':
+                    return 'settings';
+            }
         }
 
         // The current page is attached to another one.
@@ -394,7 +413,7 @@ class Page implements PageInterface
             // Parent hook is equivalent to the page menu as lowercase.
             $parent = $this->ui()->factory()->getContainer()->make($abstract);
 
-            return strtolower($parent->getMenu());
+            return Str::kebab(sanitize_title(strtolower($parent->getMenu())));
         }
 
         return '';
@@ -692,26 +711,47 @@ class Page implements PageInterface
         if ($validator->fails()) {
             $this->errors++;
 
-            add_settings_error(
+            $this->addSettingsErrorMessage(
                 $this->getSlug(),
                 $setting->getName(),
-                $validator->getMessageBag()->first($setting->getName()),
-                'error'
+                $validator->getMessageBag()->first($setting->getName())
             );
 
             return '';
         }
 
         if ($settingName === $lastSetting->getName() && ! $this->errors) {
-            add_settings_error(
-                $this->getSlug(),
-                'settings_updated',
-                __('Settings saved.'),
-                'updated'
-            );
+            $this->addSettingsSuccessMessage($this->getSlug());
         }
 
         return $value;
+    }
+
+    /**
+     * Add settings error message.
+     *
+     * @param string $slug
+     * @param string $name
+     * @param string $message
+     */
+    private function addSettingsErrorMessage(string $slug, string $name, string $message)
+    {
+        add_settings_error($slug, $name, $message, 'error');
+    }
+
+    /**
+     * Add settings success message.
+     *
+     * @param string $slug
+     */
+    private function addSettingsSuccessMessage(string $slug)
+    {
+        add_settings_error(
+            $slug,
+            'settings_updated',
+            __('Settings saved.'),
+            'updated'
+        );
     }
 
     /**

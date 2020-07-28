@@ -76,6 +76,8 @@ class CheckboxType extends BaseType implements
             // or when the option "flush" is set to "false".
             // If true, let's automatically add the "checked" attribute.
             $this->options['attributes']['checked'] = 'checked';
+        } elseif (false === $this->getValue() && isset($this->options['attributes']['checked'])) {
+            unset($this->options['attributes']['checked']);
         }
 
         return $this;
@@ -93,7 +95,7 @@ class CheckboxType extends BaseType implements
 
         $previous = get_post_meta($post_id, $this->getName(), true);
 
-        if (is_null($this->getValue()) || empty($this->getValue())) {
+        if (is_null($this->getValue())) {
             delete_post_meta($post_id, $this->getName());
         } elseif (empty($previous)) {
             add_post_meta($post_id, $this->getName(), $this->getRawValue(), true);
@@ -111,8 +113,10 @@ class CheckboxType extends BaseType implements
     {
         $value = get_post_meta($post_id, $this->getName(), true);
 
-        if (! empty($value)) {
+        if (! empty($value) && is_string($value)) {
             $this->setValue($value);
+        } elseif (empty($value) && ! empty($this->getOption('data'))) {
+            $this->setValue($this->getOption('data'));
         }
     }
 

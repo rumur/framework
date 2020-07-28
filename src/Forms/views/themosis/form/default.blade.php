@@ -1,7 +1,5 @@
-<div class="th-form">
-    @if($__form->getOption('tags'))
-        <form {!! $__form->attributes($__form->getAttributes()) !!}>
-    @endif
+<div {!! $__form->attributes(array_merge(['class' => 'th-form'], $__form->getOption('container_attr', []))) !!}>
+    {!! $__form->open() !!}
         @if('post' === $__form->getAttribute('method') && function_exists('wp_nonce_field'))
             {!! wp_nonce_field($__form->getOption('nonce_action'), $__form->getOption('nonce'), $__form->getOption('referer'), false) !!}
         @endif
@@ -9,11 +7,9 @@
             {!! csrf_field() !!}
         @endif
         @foreach($__form->repository()->getGroups() as $group)
-            <div class="th-form-group">
+            <div class="{{ sprintf('th-form-group %s', sprintf('th-group-%s', $group->getId())) }}">
                 @each($group->getView(true), $group->getItems(), '__field')
             </div>
         @endforeach
-    @if($__form->getOption('tags'))
-        </form>
-    @endif
+    {!! $__form->close() !!}
 </div>

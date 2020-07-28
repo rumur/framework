@@ -13,22 +13,48 @@ use Illuminate\Database\Console\Migrations\RefreshCommand;
 use Illuminate\Database\Console\Migrations\ResetCommand;
 use Illuminate\Database\Console\Migrations\RollbackCommand;
 use Illuminate\Database\Console\Migrations\StatusCommand;
+use Illuminate\Database\Console\Seeds\SeedCommand;
+use Illuminate\Database\Console\Seeds\SeederMakeCommand;
+use Illuminate\Notifications\Console\NotificationTableCommand;
+use Illuminate\Queue\Console\FailedTableCommand;
+use Illuminate\Queue\Console\FlushFailedCommand as FlushFailedQueueCommand;
+use Illuminate\Queue\Console\ForgetFailedCommand as ForgetFailedQueueCommand;
+use Illuminate\Queue\Console\ListenCommand as ListenQueueCommand;
+use Illuminate\Queue\Console\ListFailedCommand as ListFailedQueueCommand;
+use Illuminate\Queue\Console\RestartCommand as RestartQueueCommand;
+use Illuminate\Queue\Console\RetryCommand as RetryQueueCommand;
+use Illuminate\Queue\Console\TableCommand;
+use Illuminate\Queue\Console\WorkCommand as WorkQueueCommand;
 use Illuminate\Routing\Console\ControllerMakeCommand;
 use Illuminate\Routing\Console\MiddlewareMakeCommand;
 use Illuminate\Session\Console\SessionTableCommand;
 use Illuminate\Support\ServiceProvider;
 use Themosis\Auth\Console\AuthMakeCommand;
+use Themosis\Core\Console\ChannelMakeCommand;
 use Themosis\Core\Console\ConsoleMakeCommand;
 use Themosis\Core\Console\CustomerTableCommand;
 use Themosis\Core\Console\DownCommand;
+use Themosis\Core\Console\DropinClearCommand;
+use Themosis\Core\Console\EventCacheCommand;
+use Themosis\Core\Console\EventClearCommand;
+use Themosis\Core\Console\EventGenerateCommand;
+use Themosis\Core\Console\EventListCommand;
+use Themosis\Core\Console\EventMakeCommand;
 use Themosis\Core\Console\FormMakeCommand;
 use Themosis\Core\Console\HookMakeCommand;
+use Themosis\Core\Console\JobMakeCommand;
 use Themosis\Core\Console\KeyGenerateCommand;
+use Themosis\Core\Console\ListenerMakeCommand;
 use Themosis\Core\Console\MailMakeCommand;
 use Themosis\Core\Console\ModelMakeCommand;
+use Themosis\Core\Console\NotificationMakeCommand;
+use Themosis\Core\Console\PackageDiscoverCommand;
 use Themosis\Core\Console\PasswordResetTableCommand;
 use Themosis\Core\Console\PluginInstallCommand;
+use Themosis\Core\Console\PolicyMakeCommand;
 use Themosis\Core\Console\ProviderMakeCommand;
+use Themosis\Core\Console\RequestMakeCommand;
+use Themosis\Core\Console\ResourceMakeCommand;
 use Themosis\Core\Console\RouteCacheCommand;
 use Themosis\Core\Console\RouteClearCommand;
 use Themosis\Core\Console\RouteListCommand;
@@ -38,9 +64,8 @@ use Themosis\Core\Console\UpCommand;
 use Themosis\Core\Console\VendorPublishCommand;
 use Themosis\Core\Console\ViewClearCommand;
 use Themosis\Core\Console\WidgetMakeCommand;
-use Themosis\Core\Console\RequestMakeCommand;
 
-class ConsoleServiceProvider extends ServiceProvider
+class ArtisanServiceProvider extends ServiceProvider
 {
     /**
      * Defer the loading of the provider.
@@ -56,6 +81,10 @@ class ConsoleServiceProvider extends ServiceProvider
      */
     protected $commands = [
         'Down' => 'command.down',
+        'DropinClear' => 'command.dropin.clear',
+        'EventCache' => 'command.event.cache',
+        'EventClear' => 'command.event.clear',
+        'EventList' => 'command.event.list',
         'KeyGenerate' => 'command.key.generate',
         'Migrate' => 'command.migrate',
         'MigrateFresh' => 'command.migrate.fresh',
@@ -64,11 +93,20 @@ class ConsoleServiceProvider extends ServiceProvider
         'MigrateReset' => 'command.migrate.reset',
         'MigrateRollback' => 'command.migrate.rollback',
         'MigrateStatus' => 'command.migrate.status',
+        'PackageDiscover' => 'command.package.discover',
+        'QueueFailed' => 'command.queue.failed',
+        'QueueFlush' => 'command.queue.flush',
+        'QueueForget' => 'command.queue.forget',
+        'QueueListen' => 'command.queue.listen',
+        'QueueRestart' => 'command.queue.restart',
+        'QueueRetry' => 'command.queue.retry',
+        'QueueWork' => 'command.queue.work',
         'RouteCache' => 'command.route.cache',
         'RouteClear' => 'command.route.clear',
         'RouteList' => 'command.route.list',
         'ScheduleFinish' => ScheduleFinishCommand::class,
         'ScheduleRun' => ScheduleRunCommand::class,
+        'Seed' => 'command.seed',
         'Up' => 'command.up',
         'ViewClear' => 'command.view.clear'
     ];
@@ -80,20 +118,32 @@ class ConsoleServiceProvider extends ServiceProvider
      */
     protected $devCommands = [
         'AuthMake' => 'command.auth.make',
+        'ChannelMake' => 'command.channel.make',
         'ConsoleMake' => 'command.console.make',
         'ControllerMake' => 'command.controller.make',
         'CustomerTable' => 'command.customer.table',
+        'EventGenerate' => 'command.event.generate',
+        'EventMake' => 'command.event.make',
         'FactoryMake' => 'command.factory.make',
         'FormMake' => 'command.form.make',
         'HookMake' => 'command.hook.make',
+        'JobMake' => 'command.job.make',
+        'ListenerMake' => 'command.listener.make',
         'MailMake' => 'command.mail.make',
         'MiddlewareMake' => 'command.middleware.make',
         'MigrateMake' => 'command.migrate.make',
         'ModelMake' => 'command.model.make',
+        'NotificationMake' => 'command.notification.make',
+        'NotificationTable' => 'command.notification.table',
         'PasswordResetTable' => 'command.password.reset.table',
         'PluginInstall' => 'command.plugin.install',
+        'PolicyMake' => 'command.policy.make',
         'ProviderMake' => 'command.provider.make',
+        'QueueFailedTable' => 'command.queue.failed-table',
+        'QueueTable' => 'command.queue.table',
         'RequestMake' => 'command.request.make',
+        'ResourceMake' => 'command.resource.make',
+        'SeederMake' => 'command.seeder.make',
         'SessionTable' => 'command.session.table',
         'ThemeInstall' => 'command.theme.install',
         'VendorPublish' => 'command.vendor.publish',
@@ -135,6 +185,18 @@ class ConsoleServiceProvider extends ServiceProvider
     {
         $this->app->singleton($abstract, function ($app) {
             return new AuthMakeCommand($app['files']);
+        });
+    }
+
+    /**
+     * Register the make:channel command.
+     *
+     * @param string $abstract
+     */
+    protected function registerChannelMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new ChannelMakeCommand($app['files']);
         });
     }
 
@@ -187,6 +249,78 @@ class ConsoleServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the dropin:clear command.
+     *
+     * @param string $abstract
+     */
+    protected function registerDropinClearCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new DropinClearCommand($app['files']);
+        });
+    }
+
+    /**
+     * Register the event:cache command.
+     *
+     * @param string $abstract
+     */
+    protected function registerEventCacheCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new EventCacheCommand();
+        });
+    }
+
+    /**
+     * Register the event:clear command.
+     *
+     * @param string $abstract
+     */
+    protected function registerEventClearCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new EventClearCommand($app['files']);
+        });
+    }
+
+    /**
+     * Register the event:generate command.
+     *
+     * @param string $abstract
+     */
+    protected function registerEventGenerateCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new EventGenerateCommand();
+        });
+    }
+
+    /**
+     * Register the event:list command.
+     *
+     * @param string $abstract
+     */
+    protected function registerEventListCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new EventListCommand();
+        });
+    }
+
+    /**
+     * Register the make:event command.
+     *
+     * @param string $abstract
+     */
+    protected function registerEventMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new EventMakeCommand($app['files']);
+        });
+    }
+
+    /**
      * Register the make:factory command.
      *
      * @param string $abstract
@@ -223,6 +357,18 @@ class ConsoleServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the make:job command.
+     *
+     * @param string $abstract
+     */
+    protected function registerJobMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new JobMakeCommand($app['files']);
+        });
+    }
+
+    /**
      * Register the key:generate command.
      *
      * @param string $abstract
@@ -231,6 +377,18 @@ class ConsoleServiceProvider extends ServiceProvider
     {
         $this->app->singleton($abstract, function () {
             return new KeyGenerateCommand();
+        });
+    }
+
+    /**
+     * Register the make:listener command.
+     *
+     * @param string $abstract
+     */
+    protected function registerListenerMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new ListenerMakeCommand($app['files']);
         });
     }
 
@@ -373,6 +531,42 @@ class ConsoleServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the make:notification command.
+     *
+     * @param string $abstract
+     */
+    protected function registerNotificationMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new NotificationMakeCommand($app['files']);
+        });
+    }
+
+    /**
+     * Register the notification:table command.
+     *
+     * @param string $abstract
+     */
+    protected function registerNotificationTableCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new NotificationTableCommand($app['files'], $app['composer']);
+        });
+    }
+
+    /**
+     * Register the package:discover command.
+     *
+     * @param string $abstract
+     */
+    protected function registerPackageDiscoverCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new PackageDiscoverCommand();
+        });
+    }
+
+    /**
      * Register the password:table command.
      *
      * @param string $abstract
@@ -397,6 +591,18 @@ class ConsoleServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the make:policy command.
+     *
+     * @param string $abstract
+     */
+    protected function registerPolicyMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new PolicyMakeCommand($app['files']);
+        });
+    }
+
+    /**
      * Register the make:provider command.
      *
      * @param string $abstract
@@ -409,6 +615,114 @@ class ConsoleServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the queue:failed command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueFailedCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new ListFailedQueueCommand();
+        });
+    }
+
+    /**
+     * Register the queue:flush command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueFlushCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new FlushFailedQueueCommand();
+        });
+    }
+
+    /**
+     * Register the queue:forget command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueForgetCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new ForgetFailedQueueCommand();
+        });
+    }
+
+    /**
+     * Register the queue:listen command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueListenCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new ListenQueueCommand($app['queue.listener']);
+        });
+    }
+
+    /**
+     * Register the queue:restart command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueRestartCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new RestartQueueCommand($app['cache.store']);
+        });
+    }
+
+    /**
+     * Register the queue:retry command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueRetryCommand($abstract)
+    {
+        $this->app->singleton($abstract, function () {
+            return new RetryQueueCommand();
+        });
+    }
+
+    /**
+     * Register the queue:work command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueWorkCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new WorkQueueCommand($app['queue.worker'], $app['cache.store']);
+        });
+    }
+
+    /**
+     * Register the queue:failed-table command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueFailedTableCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new FailedTableCommand($app['files'], $app['composer']);
+        });
+    }
+
+    /**
+     * Register the queue:table command.
+     *
+     * @param string $abstract
+     */
+    protected function registerQueueTableCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new TableCommand($app['files'], $app['composer']);
+        });
+    }
+
+    /**
      * Register the make:request command.
      *
      * @param string $abstract
@@ -417,6 +731,18 @@ class ConsoleServiceProvider extends ServiceProvider
     {
         $this->app->singleton($abstract, function ($app) {
             return new RequestMakeCommand($app['files']);
+        });
+    }
+
+    /**
+     * Register the make:resource command.
+     *
+     * @param string $abstract
+     */
+    protected function registerResourceMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new ResourceMakeCommand($app['files']);
         });
     }
 
@@ -470,6 +796,30 @@ class ConsoleServiceProvider extends ServiceProvider
     protected function registerScheduleRunCommand()
     {
         $this->app->singleton(ScheduleRunCommand::class);
+    }
+
+    /**
+     * Register the db:seed command.
+     *
+     * @param string $abstract
+     */
+    protected function registerSeedCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new SeedCommand($app['db']);
+        });
+    }
+
+    /**
+     * Register the make:seeder command.
+     *
+     * @param string $abstract
+     */
+    protected function registerSeederMakeCommand($abstract)
+    {
+        $this->app->singleton($abstract, function ($app) {
+            return new SeederMakeCommand($app['files'], $app['composer']);
+        });
     }
 
     /**
